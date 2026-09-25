@@ -55,6 +55,8 @@ sabayride:
     public-key-path:  ${JWT_PUBLIC_KEY_PATH:../infra/keys/jwt-public.pem}
     access-token-minutes: 15
     refresh-token-days: 30
+    issuer: ${JWT_ISSUER:sabayride-identity}
+    key-id: ${JWT_KEY_ID:sabayride-2026}
   otp:
     # LOG prints the code to the console instead of sending an SMS.
     # Application startup MUST fail if this is LOG under the prod profile —
