@@ -98,4 +98,23 @@ public class JwtService {
     public long accessTokenSeconds() {
         return (long) accessMinutes * 60L;
     }
+
+    public UUID parseUserId(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7).trim();
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            if (signedJWT.verify(new com.nimbusds.jose.crypto.RSASSAVerifier(publicKey))) {
+                Date exp = signedJWT.getJWTClaimsSet().getExpirationTime();
+                if (exp != null && exp.after(new Date())) {
+                    return UUID.fromString(signedJWT.getJWTClaimsSet().getSubject());
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
 }
+

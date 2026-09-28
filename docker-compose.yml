@@ -70,7 +70,10 @@ services:
       # Only this service holds the PRIVATE key. Everyone else gets the public
       # key from /.well-known/jwks.json, so no other service can mint a token.
       JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
-      SABAYRIDE_OTP_DELIVERY: LOG
+      SABAYRIDE_OTP_DELIVERY: ${SABAYRIDE_OTP_DELIVERY:-PLASGATE}
+      PLASGATE_PRIVATE_KEY: ${PLASGATE_PRIVATE_KEY:-1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}
+      PLASGATE_SECRET: ${PLASGATE_SECRET:-$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7}
+      PLASGATE_SENDER: ${PLASGATE_SENDER:-SMS Info}
       JAVA_OPTS: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC"
     volumes:
       - ./infra/keys:/run/secrets:ro

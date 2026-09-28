@@ -58,10 +58,13 @@ sabayride:
     issuer: ${JWT_ISSUER:sabayride-identity}
     key-id: ${JWT_KEY_ID:sabayride-2026}
   otp:
-    # LOG prints the code to the console instead of sending an SMS.
-    # Application startup MUST fail if this is LOG under the prod profile —
-    # a backdoor that only works "when misconfigured" is still a backdoor.
-    delivery: ${SABAYRIDE_OTP_DELIVERY:LOG}
+    delivery: ${SABAYRIDE_OTP_DELIVERY:PLASGATE}
     expiry-minutes: 5
     max-attempts: 5
     rate-limit-per-hour: 3
+    plasgate:
+      api-url: ${PLASGATE_API_URL:https://cloudapi.plasgate.com/rest/send}
+      private-key: ${PLASGATE_PRIVATE_KEY:1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}
+      secret: ${PLASGATE_SECRET:$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7}
+      sender: ${PLASGATE_SENDER:SMS Info}
+
