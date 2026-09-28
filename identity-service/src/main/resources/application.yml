@@ -67,4 +67,10 @@ sabayride:
       private-key: ${PLASGATE_PRIVATE_KEY:1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}
       secret: ${PLASGATE_SECRET:$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7}
       sender: ${PLASGATE_SENDER:SMS Info}
+      smpp:
+        host: ${PLASGATE_SMPP_HOST:cloudsmpp.plasgate.com}
+        port: ${PLASGATE_SMPP_PORT:2775}
+        username: ${PLASGATE_SMPP_USERNAME:wpptdgapdfc4814}
+        password: ${PLASGATE_SMPP_PASSWORD:HM3oNVHE!YmCDMpT}
+
 
