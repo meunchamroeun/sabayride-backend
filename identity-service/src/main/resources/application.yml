@@ -61,7 +61,7 @@ sabayride:
     delivery: ${SABAYRIDE_OTP_DELIVERY:PLASGATE}
     expiry-minutes: 5
     max-attempts: 5
-    rate-limit-per-hour: 3
+    rate-limit-per-hour: ${SABAYRIDE_OTP_RATE_LIMIT:10}
     plasgate:
       api-url: ${PLASGATE_API_URL:https://cloudapi.plasgate.com/rest/send}
       private-key: ${PLASGATE_PRIVATE_KEY:1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}

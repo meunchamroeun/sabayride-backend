@@ -42,7 +42,7 @@ public class OtpService {
             PlasgateSmsSender smsSender,
             @Value("${sabayride.otp.expiry-minutes:5}") int expiryMinutes,
             @Value("${sabayride.otp.max-attempts:5}") int maxAttempts,
-            @Value("${sabayride.otp.rate-limit-per-hour:3}") int rateLimitPerHour) {
+            @Value("${sabayride.otp.rate-limit-per-hour:10}") int rateLimitPerHour) {
         this.otpCodes = otpCodes;
         this.users = users;
         this.smsSender = smsSender;

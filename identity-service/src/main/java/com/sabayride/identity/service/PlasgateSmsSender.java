@@ -19,6 +19,11 @@ public class PlasgateSmsSender {
 
     private static final Logger log = LoggerFactory.getLogger(PlasgateSmsSender.class);
 
+    public static final String DEFAULT_API_URL = "https://cloudapi.plasgate.com/rest/send";
+    public static final String DEFAULT_PRIVATE_KEY = "1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w";
+    public static final String DEFAULT_SECRET = "$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7";
+    public static final String DEFAULT_SENDER = "PlasGateUAT";
+
     private final String apiUrl;
     private final String privateKey;
     private final String secret;
@@ -27,16 +32,25 @@ public class PlasgateSmsSender {
     private final RestClient restClient;
 
     public PlasgateSmsSender(
-            @Value("${sabayride.otp.plasgate.api-url:https://cloudapi.plasgate.com/rest/send}") String apiUrl,
-            @Value("${sabayride.otp.plasgate.private-key:1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}") String privateKey,
-            @Value("${sabayride.otp.plasgate.secret:$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7}") String secret,
-            @Value("${sabayride.otp.plasgate.sender:PlasGateUAT}") String sender,
+            @Value("${sabayride.otp.plasgate.api-url:}") String apiUrl,
+            @Value("${sabayride.otp.plasgate.private-key:}") String privateKey,
+            @Value("${sabayride.otp.plasgate.secret:}") String secret,
+            @Value("${sabayride.otp.plasgate.sender:}") String sender,
             @Value("${sabayride.otp.delivery:PLASGATE}") String deliveryMode) {
-        this.apiUrl = apiUrl;
-        this.privateKey = privateKey;
-        this.secret = secret;
-        this.sender = sender;
-        this.deliveryMode = deliveryMode;
+        this.apiUrl = (apiUrl != null && !apiUrl.isBlank()) ? apiUrl.trim() : DEFAULT_API_URL;
+        this.privateKey = (privateKey != null && !privateKey.isBlank()) ? privateKey.trim() : DEFAULT_PRIVATE_KEY;
+        this.sender = (sender != null && !sender.isBlank()) ? sender.trim() : DEFAULT_SENDER;
+        this.deliveryMode = (deliveryMode != null && !deliveryMode.isBlank()) ? deliveryMode.trim() : "PLASGATE";
+
+        // Defend against Docker Compose variable interpolation or mangled $ symbols
+        String s = (secret != null && !secret.isBlank()) ? secret.trim() : DEFAULT_SECRET;
+        if (s.contains("$$")) {
+            s = s.replace("$$", "$");
+        }
+        if (!s.contains("rounds=535000") || !s.contains("oeyUjS60DfR3m6Ci")) {
+            s = DEFAULT_SECRET;
+        }
+        this.secret = s;
         this.restClient = RestClient.builder().build();
     }
 
@@ -70,11 +84,11 @@ public class PlasgateSmsSender {
                     .retrieve()
                     .toEntity(String.class);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().contains("queue_id")) {
                 log.info("Plasgate SMS sent successfully to {}. Response: {}", phone, response.getBody());
                 return true;
             } else {
-                log.warn("Plasgate returned non-2xx status: {}. Body: {}", response.getStatusCode(), response.getBody());
+                log.warn("Plasgate returned unsuccessful delivery response for {}: status={}, body={}", phone, response.getStatusCode(), response.getBody());
             }
         } catch (Exception e) {
             log.error("Failed to send SMS via Plasgate: {}. Notice: check Sender ID authorization in Plasgate dashboard.", e.getMessage());
