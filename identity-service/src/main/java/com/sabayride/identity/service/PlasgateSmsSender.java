@@ -28,9 +28,9 @@ public class PlasgateSmsSender {
 
     public PlasgateSmsSender(
             @Value("${sabayride.otp.plasgate.api-url:https://cloudapi.plasgate.com/rest/send}") String apiUrl,
-            @Value("${sabayride.otp.plasgate.private-key:}") String privateKey,
-            @Value("${sabayride.otp.plasgate.secret:}") String secret,
-            @Value("${sabayride.otp.plasgate.sender:SMS Info}") String sender,
+            @Value("${sabayride.otp.plasgate.private-key:1Cifz_UnM2l9bBllbSE07gsc6PBDZGBBdrBVVkwRrEb14llW6VNdaLRt7sqEBxbejHNeBX7sGYLiPQlLYEzc1w}") String privateKey,
+            @Value("${sabayride.otp.plasgate.secret:$5$rounds=535000$oeyUjS60DfR3m6Ci$2nmQdLM4Vfwnw5NzkbweZKAeSbjiioCQp3A5CgxB5O7}") String secret,
+            @Value("${sabayride.otp.plasgate.sender:PlasGateUAT}") String sender,
             @Value("${sabayride.otp.delivery:PLASGATE}") String deliveryMode) {
         this.apiUrl = apiUrl;
         this.privateKey = privateKey;

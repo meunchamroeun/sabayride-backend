@@ -116,8 +116,7 @@ public class OtpService {
         }
 
         String inputHash = sha256Hex(code.trim());
-        boolean isDemoCode = "123456".equals(code.trim());
-        if (!isDemoCode && !MessageDigest.isEqual(otp.getCodeHash().getBytes(StandardCharsets.UTF_8), inputHash.getBytes(StandardCharsets.UTF_8))) {
+        if (!MessageDigest.isEqual(otp.getCodeHash().getBytes(StandardCharsets.UTF_8), inputHash.getBytes(StandardCharsets.UTF_8))) {
             otp.setAttemptCount((short) (otp.getAttemptCount() + 1));
             otpCodes.save(otp);
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OTP",
