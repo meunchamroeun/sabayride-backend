@@ -128,6 +128,37 @@ public class AuthService {
         return issue(u, roles.isEmpty() ? List.of(ROLE_CUSTOMER) : roles);
     }
 
+    @Transactional
+    public AuthTokensResponse resetPassword(String resetToken, String newPassword) {
+        UUID userId = jwt.parsePasswordResetToken(resetToken);
+        if (userId == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_TOKEN",
+                    "Token invalid, expired, or already used.", "resetToken");
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
+                    "Password must be at least 8 characters.", "newPassword");
+        }
+        User u = users.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "USER_NOT_FOUND", "User not found.", null));
+
+        AuthIdentity ai = identities.findByUserIdAndProvider(u.getId(), PROVIDER_PASSWORD)
+                .orElseGet(() -> {
+                    AuthIdentity newAi = new AuthIdentity();
+                    newAi.setUserId(u.getId());
+                    newAi.setProvider(PROVIDER_PASSWORD);
+                    return newAi;
+                });
+        ai.setPasswordHash(encoder.encode(newPassword));
+        identities.save(ai);
+
+        // Security requirement (FR-84): Revoke all existing refresh tokens
+        refreshTokens.deleteByUserId(u.getId());
+
+        List<String> roles = rolesFor(u.getId());
+        return issue(u, roles.isEmpty() ? List.of(ROLE_CUSTOMER) : roles);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────
 
     private AuthTokensResponse issue(User u, List<String> roles) {

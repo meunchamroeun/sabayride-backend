@@ -140,6 +140,35 @@ public class OtpService {
         return OtpResponse.ok("Phone number verified successfully.");
     }
 
+    @Transactional
+    public void verifyPasswordResetCode(String rawPhone, String code) {
+        String phone = normalisePhone(rawPhone);
+        OtpCode otp = otpCodes.findLatestActive(phone, "PASSWORD_RESET")
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
+                    "That code is not valid. Request a new one.", "code"));
+
+        if (otp.getExpiresAt().isBefore(Instant.now())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
+                    "That code is not valid. Request a new one.", "code");
+        }
+
+        if (otp.getAttemptCount() >= maxAttempts) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
+                    "Too many failed attempts. Please request a new verification code.", "code");
+        }
+
+        String inputHash = sha256Hex(code.trim());
+        if (!MessageDigest.isEqual(otp.getCodeHash().getBytes(StandardCharsets.UTF_8), inputHash.getBytes(StandardCharsets.UTF_8))) {
+            otp.setAttemptCount((short) (otp.getAttemptCount() + 1));
+            otpCodes.save(otp);
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
+                    "That code is not valid. Request a new one.", "code");
+        }
+
+        otp.setConsumedAt(Instant.now());
+        otpCodes.save(otp);
+    }
+
     private String normalisePhone(String raw) {
         if (raw == null) return "";
         String s = raw.trim();

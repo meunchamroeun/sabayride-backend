@@ -116,5 +116,47 @@ public class JwtService {
         }
         return null;
     }
+
+    /** Sign a short-lived (5 min) token scoped exclusively to PASSWORD_RESET. */
+    public String signPasswordResetToken(UUID subject) {
+        try {
+            Date now = new Date();
+            Date exp = new Date(now.getTime() + 5 * 60_000L); // 5 minutes per spec
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(issuer)
+                    .subject(subject.toString())
+                    .claim("scope", "PASSWORD_RESET")
+                    .issueTime(now)
+                    .expirationTime(exp)
+                    .jwtID(UUID.randomUUID().toString())
+                    .build();
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(keyId).build(),
+                    claims);
+            jwt.sign(new RSASSASigner(privateKey));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to sign password reset token", e);
+        }
+    }
+
+    /** Verify and extract subject from a PASSWORD_RESET token. */
+    public UUID parsePasswordResetToken(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token.trim());
+            if (signedJWT.verify(new com.nimbusds.jose.crypto.RSASSAVerifier(publicKey))) {
+                Date exp = signedJWT.getJWTClaimsSet().getExpirationTime();
+                String scope = (String) signedJWT.getJWTClaimsSet().getClaim("scope");
+                if ("PASSWORD_RESET".equals(scope) && exp != null && exp.after(new Date())) {
+                    return UUID.fromString(signedJWT.getJWTClaimsSet().getSubject());
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
 }
 

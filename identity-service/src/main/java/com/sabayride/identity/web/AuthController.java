@@ -82,6 +82,57 @@ public class AuthController {
         return ResponseEntity.ok(otpService.verifyPhone(req.phone(), req.code(), userId));
     }
 
+    /** Start a password reset (Step 1 of 3: Sends 6-digit code via SMS) */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        String p1 = req.phone().trim();
+        String p2 = p1.startsWith("0") ? "+855" + p1.substring(1) : p1;
+        String p3 = p1.startsWith("+855") ? "0" + p1.substring(4) : p1;
+
+        boolean userExists = userRepository.findByPhone(p1).isPresent()
+                || userRepository.findByPhone(p2).isPresent()
+                || userRepository.findByPhone(p3).isPresent();
+
+        if (userExists) {
+            try {
+                otpService.sendOtp(req.phone(), "PASSWORD_RESET");
+            } catch (Exception ignored) {
+            }
+        }
+
+        // OpenAPI spec contract: Always return 202 whether number exists or not
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
+                "message", "If that number has an account, we've sent a code.",
+                "expiresInSeconds", 600
+        ));
+    }
+
+    /** Exchange reset code for a short-lived reset token (Step 2 of 3) */
+    @PostMapping("/password/verify-code")
+    public ResponseEntity<ResetCodeVerifiedResponse> verifyPasswordResetCode(@Valid @RequestBody VerifyResetCodeRequest req) {
+        otpService.verifyPasswordResetCode(req.phone(), req.code());
+
+        String p1 = req.phone().trim();
+        String p2 = p1.startsWith("0") ? "+855" + p1.substring(1) : p1;
+        String p3 = p1.startsWith("+855") ? "0" + p1.substring(4) : p1;
+
+        var user = userRepository.findByPhone(p1)
+                .or(() -> userRepository.findByPhone(p2))
+                .or(() -> userRepository.findByPhone(p3))
+                .orElseThrow(() -> new com.sabayride.identity.common.ApiException(
+                        HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
+                        "That code is not valid. Request a new one.", "code"));
+
+        String resetToken = jwtService.signPasswordResetToken(user.getId());
+        return ResponseEntity.ok(ResetCodeVerifiedResponse.of(resetToken, 300));
+    }
+
+    /** Set a new password using reset token (Step 3 of 3) */
+    @PostMapping("/password/reset")
+    public ResponseEntity<AuthTokensResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        return ResponseEntity.ok(service.resetPassword(req.resetToken(), req.newPassword()));
+    }
+
     /** Development/testing helper: Delete a test user by phone */
     @org.springframework.transaction.annotation.Transactional
     @DeleteMapping("/test/users")
