@@ -31,6 +31,7 @@ public class OtpService {
     private final OtpCodeRepository otpCodes;
     private final UserRepository users;
     private final PlasgateSmsSender smsSender;
+    private final EmailSender emailSender;
     private final int expiryMinutes;
     private final int maxAttempts;
     private final int rateLimitPerHour;
@@ -40,28 +41,31 @@ public class OtpService {
             OtpCodeRepository otpCodes,
             UserRepository users,
             PlasgateSmsSender smsSender,
+            EmailSender emailSender,
             @Value("${sabayride.otp.expiry-minutes:5}") int expiryMinutes,
             @Value("${sabayride.otp.max-attempts:5}") int maxAttempts,
             @Value("${sabayride.otp.rate-limit-per-hour:10}") int rateLimitPerHour) {
         this.otpCodes = otpCodes;
         this.users = users;
         this.smsSender = smsSender;
+        this.emailSender = emailSender;
         this.expiryMinutes = expiryMinutes;
         this.maxAttempts = maxAttempts;
         this.rateLimitPerHour = rateLimitPerHour;
     }
 
     @Transactional
-    public OtpResponse sendOtp(String rawPhone, String purpose) {
-        String phone = normalisePhone(rawPhone);
+    public OtpResponse sendOtp(String rawTarget, String purpose) {
+        String target = normaliseTarget(rawTarget);
+        boolean isEmail = target.contains("@");
         String resolvedPurpose = (purpose == null || purpose.isBlank()) ? "PHONE_VERIFICATION" : purpose.trim().toUpperCase();
 
         // Rate limit check
         Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
-        long recent = otpCodes.countRecentRequests(phone, oneHourAgo);
+        long recent = otpCodes.countRecentRequests(target, oneHourAgo);
         if (recent >= rateLimitPerHour) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED",
-                    "Too many OTP requests. Please wait an hour before requesting again.", "phone");
+                    "Too many OTP requests. Please wait an hour before requesting again.", isEmail ? "email" : "phone");
         }
 
         // Generate 6 digit code
@@ -69,16 +73,22 @@ public class OtpService {
         String codeHash = sha256Hex(code);
 
         OtpCode otp = new OtpCode();
-        otp.setPhone(phone);
+        otp.setPhone(target);
         otp.setPurpose(resolvedPurpose);
         otp.setCodeHash(codeHash);
         otp.setExpiresAt(Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES));
         otp.setAttemptCount((short) 0);
         otpCodes.save(otp);
 
-        String smsText = "Your SabayRide code is " + code + ". Valid for " + expiryMinutes + " minutes.";
-        log.info("═══ [OTP DISPATCH] ═══ Phone: {} | Code: {} | Purpose: {}", phone, code, resolvedPurpose);
-        smsSender.sendSms(phone, smsText);
+        String messageContent = "Your SabayRide verification code is " + code + ". Valid for " + expiryMinutes + " minutes.";
+
+        if (isEmail) {
+            log.info("═══ [EMAIL OTP DISPATCH] ═══ Target: {} | Code: {} | Purpose: {}", target, code, resolvedPurpose);
+            emailSender.sendEmail(target, "SabayRide Verification Code", messageContent);
+        } else {
+            log.info("═══ [SMS OTP DISPATCH] ═══ Target: {} | Code: {} | Purpose: {}", target, code, resolvedPurpose);
+            smsSender.sendSms(target, messageContent);
+        }
 
         return OtpResponse.ok("Verification code sent successfully.");
     }
@@ -141,9 +151,9 @@ public class OtpService {
     }
 
     @Transactional
-    public void verifyPasswordResetCode(String rawPhone, String code) {
-        String phone = normalisePhone(rawPhone);
-        OtpCode otp = otpCodes.findLatestActive(phone, "PASSWORD_RESET")
+    public void verifyPasswordResetCode(String rawTarget, String code) {
+        String target = normaliseTarget(rawTarget);
+        OtpCode otp = otpCodes.findLatestActive(target, "PASSWORD_RESET")
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RESET_CODE",
                     "That code is not valid. Request a new one.", "code"));
 
@@ -169,7 +179,16 @@ public class OtpService {
         otpCodes.save(otp);
     }
 
-    private String normalisePhone(String raw) {
+    public String normaliseTarget(String raw) {
+        if (raw == null) return "";
+        String s = raw.trim();
+        if (s.contains("@")) {
+            return s.toLowerCase();
+        }
+        return normalisePhone(s);
+    }
+
+    public String normalisePhone(String raw) {
         if (raw == null) return "";
         String s = raw.trim();
         if (s.startsWith("0")) {

@@ -28,7 +28,7 @@ public class OtpCode {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "phone", nullable = false, length = 20)
+    @Column(name = "phone", nullable = false, length = 255)
     private String phone;
 
     @Column(name = "purpose", nullable = false, length = 30)
