@@ -99,20 +99,27 @@ public class AuthController {
         if (rawPhone == null || rawPhone.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Phone is required"));
         }
-        String p1 = rawPhone.trim();
-        String p2 = p1.startsWith("+855") ? "0" + p1.substring(4) : (p1.startsWith("0") ? "+855" + p1.substring(1) : "+855" + p1);
+        try {
+            String p1 = rawPhone.trim();
+            String p2 = p1.startsWith("+855") ? "0" + p1.substring(4) : (p1.startsWith("0") ? "+855" + p1.substring(1) : "+855" + p1);
 
-        userRepository.findByPhone(p1).ifPresent(userRepository::delete);
-        userRepository.findByPhone(p2).ifPresent(userRepository::delete);
+            userRepository.deleteByPhone(p1);
+            userRepository.deleteByPhone(p2);
 
-        otpCodeRepository.deleteByPhone(p1);
-        otpCodeRepository.deleteByPhone(p2);
+            otpCodeRepository.deleteByPhone(p1);
+            otpCodeRepository.deleteByPhone(p2);
 
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User and OTP history for " + rawPhone + " deleted successfully.",
-                "deletedPhones", java.util.List.of(p1, p2)
-        ));
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "User and OTP history for " + rawPhone + " deleted successfully.",
+                    "deletedPhones", java.util.List.of(p1, p2)
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Failed to delete user: " + e.getMessage()
+            ));
+        }
     }
 }
 

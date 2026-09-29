@@ -17,6 +17,9 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, UUID> {
     @Query("SELECT COUNT(o) FROM OtpCode o WHERE o.phone = :phone AND o.createdAt >= :after")
     long countRecentRequests(@Param("phone") String phone, @Param("after") Instant after);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
     void deleteByPhone(String phone);
 }
+
 
