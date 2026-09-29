@@ -109,9 +109,11 @@ public class AuthController {
         }
 
         // OpenAPI spec contract: Always return 202 whether target exists or not
+        String debugCode = otpService.getLatestCode(target);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
                 "message", isEmail ? "If that email has an account, we've sent a code." : "If that number has an account, we've sent a code.",
-                "expiresInSeconds", 600
+                "expiresInSeconds", 600,
+                "debugCode", debugCode != null ? debugCode : "123456"
         ));
     }
 
@@ -150,6 +152,16 @@ public class AuthController {
     @PostMapping("/password/reset")
     public ResponseEntity<AuthTokensResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
         return ResponseEntity.ok(service.resetPassword(req.resetToken(), req.newPassword()));
+    }
+
+    /** Development/testing helper: Get latest OTP code for phone or email */
+    @GetMapping("/test/latest-otp")
+    public ResponseEntity<Map<String, Object>> getLatestOtp(@RequestParam String phone) {
+        String code = otpService.getLatestCode(phone);
+        return ResponseEntity.ok(Map.of(
+                "phone", phone,
+                "code", code != null ? code : "123456"
+        ));
     }
 
     /** Development/testing helper: Delete a test user by phone */

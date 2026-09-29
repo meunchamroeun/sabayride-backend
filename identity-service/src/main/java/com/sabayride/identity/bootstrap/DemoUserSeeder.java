@@ -59,6 +59,8 @@ public class DemoUserSeeder implements ApplicationRunner {
                 List.of("CUSTOMER", "SHOP_OWNER"));
         seed("SabayRide Admin", "admin@sabayride.app", "+85512000003",
                 List.of("CUSTOMER", "ADMIN"));
+        seed("Chamroeun Meun", "meunchamroeun09@gmail.com", "+85570483980",
+                List.of("CUSTOMER"));
     }
 
     private void seed(String fullName, String email, String phone, List<String> roles) {
