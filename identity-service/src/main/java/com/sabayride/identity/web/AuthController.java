@@ -101,17 +101,24 @@ public class AuthController {
                     || userRepository.findByPhone(p3).isPresent();
         }
 
-        if (userExists) {
-            try {
-                otpService.sendOtp(target, "PASSWORD_RESET");
-            } catch (Exception ignored) {
-            }
+        if (!userExists) {
+            throw new com.sabayride.identity.common.ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "USER_NOT_FOUND",
+                    isEmail
+                            ? "No account found with this email address. Please sign up for a new account."
+                            : "No account found with this phone number. Please sign up for a new account.",
+                    isEmail ? "email" : "phone");
         }
 
-        // OpenAPI spec contract: Always return 202 whether target exists or not
+        try {
+            otpService.sendOtp(target, "PASSWORD_RESET");
+        } catch (Exception ignored) {
+        }
+
         String debugCode = otpService.getLatestCode(target);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
-                "message", isEmail ? "If that email has an account, we've sent a code." : "If that number has an account, we've sent a code.",
+        return ResponseEntity.ok(Map.of(
+                "message", isEmail ? "Verification code sent to your email." : "Verification code sent to your phone.",
                 "expiresInSeconds", 600,
                 "debugCode", debugCode != null ? debugCode : "123456"
         ));
