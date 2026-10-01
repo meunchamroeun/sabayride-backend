@@ -107,6 +107,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: devpassword
       JWKS_URL: http://identity-service:8081/.well-known/jwks.json
       PAYMENT_SERVICE_URL: http://payment-service:8083
+      PAYWAY_MERCHANT_ID: ${PAYWAY_MERCHANT_ID:-ec479045}
+      PAYWAY_API_KEY: ${PAYWAY_API_KEY:-eaf45f07b874c56d28261bf3574ae9f77d3465d7}
+      PAYWAY_PURCHASE_URL: ${PAYWAY_PURCHASE_URL:-https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase}
+      PAYWAY_CHECK_TRANSACTION_URL: ${PAYWAY_CHECK_TRANSACTION_URL:-https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/check-transaction-2}
       JAVA_OPTS: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]

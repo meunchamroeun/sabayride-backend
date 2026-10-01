@@ -71,3 +71,10 @@ sabayride:
   hold:
     same-day-minutes: 30
     future-hours: 2
+
+payway:
+  merchant-id: ${PAYWAY_MERCHANT_ID:ec479045}
+  api-key: ${PAYWAY_API_KEY:eaf45f07b874c56d28261bf3574ae9f77d3465d7}
+  purchase-url: ${PAYWAY_PURCHASE_URL:https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase}
+  check-transaction-url: ${PAYWAY_CHECK_TRANSACTION_URL:https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/check-transaction-2}
+
