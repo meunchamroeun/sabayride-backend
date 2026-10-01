@@ -19,14 +19,13 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService service;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Fallback user if token not supplied (Chamroeun Meun account in identity.users)
     private static final UUID FALLBACK_USER = UUID.fromString("9c5b502c-5be7-4fe1-9641-9e8c462046b6");
 
-    public NotificationController(NotificationService service, ObjectMapper objectMapper) {
+    public NotificationController(NotificationService service) {
         this.service = service;
-        this.objectMapper = objectMapper;
     }
 
     @GetMapping
