@@ -51,7 +51,11 @@ public class SecurityConfig {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",       // Vite, React, Angular dev servers
-                "http://127.0.0.1:*"
+                "http://127.0.0.1:*",
+                "https://*.pages.dev",
+                "https://sabayride.pages.dev",
+                "https://*.ice-tea.me",
+                "https://sabayride.ice-tea.me"
         ));
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
